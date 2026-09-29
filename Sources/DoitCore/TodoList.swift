@@ -16,4 +16,14 @@ public enum TodoList: String, CaseIterable, Identifiable, Sendable {
         case .logbook: return all.filter(\.isCompleted).sorted { $0.completedAt! > $1.completedAt! }
         }
     }
+
+    public func newTodo(titled title: String, now: Date = .now, calendar: Calendar = .current) -> Todo {
+        let today = calendar.startOfDay(for: now)
+        switch self {
+        case .today: return Todo(title: title, date: today)
+        case .upcoming: return Todo(title: title, date: calendar.date(byAdding: .day, value: 1, to: today))
+        case .urgent: return Todo(title: title, isUrgent: true)
+        case .anytime, .logbook: return Todo(title: title)
+        }
+    }
 }
