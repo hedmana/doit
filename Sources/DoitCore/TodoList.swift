@@ -17,10 +17,15 @@ public enum TodoList: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    public static func logbookDays(from all: [Todo], calendar: Calendar = .current) -> [(day: Date, todos: [Todo])] {
-        Dictionary(grouping: logbook.todos(from: all, calendar: calendar)) { calendar.startOfDay(for: $0.completedAt!) }
-            .map { (day: $0.key, todos: $0.value) }
-            .sorted { $0.day > $1.day }
+    public var isGroupedByDay: Bool { self == .upcoming || self == .logbook }
+
+    public func days(from all: [Todo], now: Date = .now, calendar: Calendar = .current) -> [(day: Date, todos: [Todo])] {
+        var days: [(day: Date, todos: [Todo])] = []
+        for todo in todos(from: all, now: now, calendar: calendar) {
+            let day = calendar.startOfDay(for: self == .logbook ? todo.completedAt! : todo.date!)
+            if days.last?.day == day { days[days.count - 1].todos.append(todo) } else { days.append((day, [todo])) }
+        }
+        return days
     }
 
     public func newTodo(titled title: String, now: Date = .now, calendar: Calendar = .current) -> Todo {
