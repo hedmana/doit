@@ -8,10 +8,9 @@ struct TodoStoreTests {
 
     @Test func persistsAcrossLaunches() {
         let store = TodoStore(fileURL: url)
-        var todo = Todo(title: "buy milk", isUrgent: true)
+        let todo = Todo(title: "buy milk", isUrgent: true)
         store.add(todo)
-        todo.title = "buy oat milk"
-        store.update(todo)
+        store.update(todo.id) { $0.title = "buy oat milk" }
         store.toggleComplete(todo.id)
         let trash = Todo(title: "trash")
         store.add(trash)

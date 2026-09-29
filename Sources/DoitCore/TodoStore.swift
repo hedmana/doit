@@ -20,16 +20,14 @@ public final class TodoStore {
         save()
     }
 
-    public func update(_ todo: Todo) {
-        guard let index = todos.firstIndex(where: { $0.id == todo.id }) else { return }
-        todos[index] = todo
+    public func update(_ id: Todo.ID, _ change: (inout Todo) -> Void) {
+        guard let index = todos.firstIndex(where: { $0.id == id }) else { return }
+        change(&todos[index])
         save()
     }
 
     public func toggleComplete(_ id: Todo.ID, now: Date = .now) {
-        guard let index = todos.firstIndex(where: { $0.id == id }) else { return }
-        todos[index].completedAt = todos[index].isCompleted ? nil : now
-        save()
+        update(id) { $0.completedAt = $0.isCompleted ? nil : now }
     }
 
     public func delete(_ id: Todo.ID) {
