@@ -18,6 +18,7 @@ struct ContentView: View {
         } detail: {
             if let selection {
                 TodoListView(list: selection, now: now)
+                    .id(selection)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: DispatchQueue.main)) { _ in
