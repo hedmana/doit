@@ -43,4 +43,10 @@ struct TodoListTests {
         }
         #expect(titles(.logbook, todos) == ["newer", "older"])
     }
+
+    @Test func newTodoLandsInItsList() {
+        for list in TodoList.allCases where list != .logbook {
+            #expect(titles(list, [list.newTodo(titled: "new", now: now, calendar: calendar)]) == ["new"])
+        }
+    }
 }
