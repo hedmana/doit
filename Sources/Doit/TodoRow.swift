@@ -5,23 +5,24 @@ struct TodoRow: View {
     let todo: Todo
     let now: Date
     let list: TodoList
+    let editing: FocusState<Todo.ID?>.Binding
     @Environment(TodoStore.self) private var store
     @State private var title: String
     @State private var isPickingDate = false
     @State private var isHovering = false
-    @FocusState private var isEditing: Bool
 
-    init(todo: Todo, now: Date, list: TodoList) {
+    init(todo: Todo, now: Date, list: TodoList, editing: FocusState<Todo.ID?>.Binding) {
         self.todo = todo
         self.now = now
         self.list = list
+        self.editing = editing
         _title = State(initialValue: todo.title)
     }
 
     var body: some View {
         HStack {
             Button {
-                withAnimation { store.toggleComplete(todo.id) }
+                withAnimation { store.toggleComplete([todo.id]) }
             } label: {
                 Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
@@ -31,10 +32,10 @@ struct TodoRow: View {
 
             TextField("Title", text: $title)
                 .textFieldStyle(.plain)
-                .focused($isEditing)
+                .focused(editing, equals: todo.id)
                 .disabled(todo.isCompleted)
                 .onSubmit(commitTitle)
-                .onChange(of: isEditing) { if !isEditing { commitTitle() } }
+                .onChange(of: editing.wrappedValue == todo.id) { _, isEditing in if !isEditing { commitTitle() } }
                 .onChange(of: todo.title) { title = todo.title }
 
             if todo.isUrgent && list != .urgent {
@@ -48,16 +49,6 @@ struct TodoRow: View {
             }
         }
         .onHover { isHovering = $0 }
-        .contextMenu {
-            if !todo.isCompleted {
-                Button(todo.isUrgent ? "Remove Urgent" : "Mark Urgent") { store.update(todo.id) { $0.isUrgent.toggle() } }
-                Button("Schedule for Today") { schedule(daysFromNow: 0) }
-                Button("Schedule for Tomorrow") { schedule(daysFromNow: 1) }
-                Button("Remove Date") { schedule(daysFromNow: nil) }.disabled(todo.date == nil)
-                Divider()
-            }
-            Button("Delete", role: .destructive) { withAnimation { store.delete(todo.id) } }
-        }
     }
 
     @ViewBuilder private var dateLabel: some View {
@@ -76,13 +67,13 @@ struct TodoRow: View {
     private var datePicker: some View {
         VStack {
             DatePicker("When", selection: Binding(get: { todo.date ?? now }, set: { date in
-                store.update(todo.id) { $0.date = Calendar.current.startOfDay(for: date) }
+                store.update([todo.id]) { $0.date = Calendar.current.startOfDay(for: date) }
                 isPickingDate = false
             }), displayedComponents: .date)
             .datePickerStyle(.graphical)
             .labelsHidden()
             Button("Remove Date") {
-                schedule(daysFromNow: nil)
+                withAnimation { store.schedule([todo.id], daysFromNow: nil) }
                 isPickingDate = false
             }
             .disabled(todo.date == nil)
@@ -98,21 +89,12 @@ struct TodoRow: View {
         return date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
     }
 
-    private func schedule(daysFromNow days: Int?) {
-        let calendar = Calendar.current
-        withAnimation {
-            store.update(todo.id) { todo in
-                todo.date = days.flatMap { calendar.date(byAdding: .day, value: $0, to: calendar.startOfDay(for: now)) }
-            }
-        }
-    }
-
     private func commitTitle() {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             title = todo.title
             return
         }
-        if trimmed != todo.title { store.update(todo.id) { $0.title = trimmed } }
+        if trimmed != todo.title { store.update([todo.id]) { $0.title = trimmed } }
     }
 }

@@ -11,5 +11,6 @@ struct DoitApp: App {
                 .environment(store)
                 .frame(minWidth: 700, minHeight: 450)
         }
+        .commands { TodoCommands(store: store) }
     }
 }
