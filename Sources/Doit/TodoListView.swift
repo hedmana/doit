@@ -6,10 +6,15 @@ struct TodoListView: View {
     let now: Date
     @Environment(TodoStore.self) private var store
     @State private var newTitle = ""
+    @State private var selection: Set<Todo.ID> = []
     @FocusState private var isAdding: Bool
+    @FocusState private var editing: Todo.ID?
 
     var body: some View {
-        List {
+        let todos = list.todos(from: store.todos, now: now)
+        // Selection keeps ids of todos that left the list (completed, rescheduled); act only on visible ones
+        let selected = selection.intersection(todos.map(\.id))
+        List(selection: $selection) {
             if list != .logbook {
                 HStack {
                     Image(systemName: "plus").foregroundStyle(.secondary)
@@ -24,9 +29,16 @@ struct TodoListView: View {
                     Section(dayTitle(group.day)) { rows(group.todos) }
                 }
             } else {
-                rows(list.todos(from: store.todos, now: now))
+                rows(todos)
             }
         }
+        .contextMenu(forSelectionType: Todo.ID.self) { ids in
+            if !ids.isEmpty { TodoMenu(store: store, ids: ids) }
+        } primaryAction: { ids in
+            if ids.count == 1 { editing = ids.first }
+        }
+        .onDeleteCommand { withAnimation { store.delete(selected) } }
+        .focusedSceneValue(\.selectedTodos, selected)
         .navigationTitle(list.title)
         .toolbar {
             Button("New To-Do", systemImage: "plus") { isAdding = true }
@@ -36,7 +48,7 @@ struct TodoListView: View {
     }
 
     private func rows(_ todos: [Todo]) -> some View {
-        ForEach(todos) { TodoRow(todo: $0, now: now, list: list) }
+        ForEach(todos) { TodoRow(todo: $0, now: now, list: list, editing: $editing) }
     }
 
     private func dayTitle(_ day: Date) -> String {

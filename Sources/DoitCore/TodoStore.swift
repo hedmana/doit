@@ -20,17 +20,23 @@ public final class TodoStore {
         commit { $0.append(todo) }
     }
 
-    public func update(_ id: Todo.ID, _ change: (inout Todo) -> Void) {
-        guard let index = todos.firstIndex(where: { $0.id == id }) else { return }
-        commit { change(&$0[index]) }
+    public func update(_ ids: Set<Todo.ID>, _ change: (inout Todo) -> Void) {
+        commit { todos in
+            for index in todos.indices where ids.contains(todos[index].id) { change(&todos[index]) }
+        }
     }
 
-    public func toggleComplete(_ id: Todo.ID, now: Date = .now) {
-        update(id) { $0.completedAt = $0.isCompleted ? nil : now }
+    public func toggleComplete(_ ids: Set<Todo.ID>, now: Date = .now) {
+        update(ids) { $0.completedAt = $0.isCompleted ? nil : now }
     }
 
-    public func delete(_ id: Todo.ID) {
-        commit { $0.removeAll { $0.id == id } }
+    public func schedule(_ ids: Set<Todo.ID>, daysFromNow days: Int?, now: Date = .now, calendar: Calendar = .current) {
+        let date = days.flatMap { calendar.date(byAdding: .day, value: $0, to: calendar.startOfDay(for: now)) }
+        update(ids) { $0.date = date }
+    }
+
+    public func delete(_ ids: Set<Todo.ID>) {
+        commit { $0.removeAll { ids.contains($0.id) } }
     }
 
     private func commit(_ change: (inout [Todo]) -> Void) {
