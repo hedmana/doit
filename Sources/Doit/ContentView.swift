@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(TodoStore.self) private var store
+    @Environment(\.undoManager) private var undoManager
     @State private var selection: TodoList? = .today
     @State private var now = Date.now
 
@@ -21,6 +22,7 @@ struct ContentView: View {
                     .id(selection)
             }
         }
+        .onAppear { store.undoManager = undoManager }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: DispatchQueue.main)) { _ in
             now = .now
         }

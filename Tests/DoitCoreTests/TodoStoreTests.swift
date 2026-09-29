@@ -32,6 +32,26 @@ struct TodoStoreTests {
         #expect(!store.todos[0].isCompleted)
     }
 
+    @Test func undoAndRedoRestoreChanges() {
+        let store = TodoStore(fileURL: url)
+        let undo = UndoManager()
+        undo.groupsByEvent = false
+        store.undoManager = undo
+        let todo = Todo(title: "a")
+        for change in [{ store.add(todo) }, { store.update(todo.id) { $0.title = "b" } }, { store.delete(todo.id) }] {
+            undo.beginUndoGrouping()
+            change()
+            undo.endUndoGrouping()
+        }
+
+        undo.undo()
+        #expect(store.todos.map(\.title) == ["b"])
+        undo.undo()
+        #expect(store.todos.map(\.title) == ["a"])
+        undo.redo()
+        #expect(TodoStore(fileURL: url).todos.map(\.title) == ["b"])
+    }
+
     @Test func unreadableFileIsBackedUpNotOverwritten() throws {
         let dir = url.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

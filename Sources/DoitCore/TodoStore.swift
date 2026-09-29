@@ -8,6 +8,7 @@ public final class TodoStore {
     public nonisolated static let defaultURL = URL.applicationSupportDirectory.appending(path: "doit/todos.json")
 
     public private(set) var todos: [Todo] = []
+    @ObservationIgnored public var undoManager: UndoManager?
     private let fileURL: URL
 
     public init(fileURL: URL = TodoStore.defaultURL) {
@@ -16,14 +17,12 @@ public final class TodoStore {
     }
 
     public func add(_ todo: Todo) {
-        todos.append(todo)
-        save()
+        commit { $0.append(todo) }
     }
 
     public func update(_ id: Todo.ID, _ change: (inout Todo) -> Void) {
         guard let index = todos.firstIndex(where: { $0.id == id }) else { return }
-        change(&todos[index])
-        save()
+        commit { change(&$0[index]) }
     }
 
     public func toggleComplete(_ id: Todo.ID, now: Date = .now) {
@@ -31,7 +30,13 @@ public final class TodoStore {
     }
 
     public func delete(_ id: Todo.ID) {
-        todos.removeAll { $0.id == id }
+        commit { $0.removeAll { $0.id == id } }
+    }
+
+    private func commit(_ change: (inout [Todo]) -> Void) {
+        let previous = todos
+        change(&todos)
+        undoManager?.registerUndo(withTarget: self) { $0.commit { $0 = previous } }
         save()
     }
 
