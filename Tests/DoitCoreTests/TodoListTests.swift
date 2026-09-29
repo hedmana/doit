@@ -61,8 +61,17 @@ struct TodoListTests {
             todo.completedAt = date
             return todo
         }
-        let days = TodoList.logbookDays(from: todos, calendar: calendar)
+        let days = TodoList.logbook.days(from: todos, now: now, calendar: calendar)
         #expect(days.map(\.day) == [calendar.startOfDay(for: now), calendar.startOfDay(for: day(-1))])
         #expect(days.map { $0.todos.map(\.title) } == [["1", "3"], ["2", "0"]])
+    }
+
+    @Test func upcomingGroupsByDaySoonestFirst() {
+        let todos = [day(3), day(1), day(3).addingTimeInterval(60), day(2), now].enumerated().map { index, date in
+            Todo(title: "\(index)", date: date)
+        }
+        let days = TodoList.upcoming.days(from: todos, now: now, calendar: calendar)
+        #expect(days.map(\.day) == [1, 2, 3].map { calendar.startOfDay(for: day($0)) })
+        #expect(days.map { $0.todos.map(\.title) } == [["1"], ["3"], ["0", "2"]])
     }
 }

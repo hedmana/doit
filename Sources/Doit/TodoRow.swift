@@ -4,16 +4,17 @@ import SwiftUI
 struct TodoRow: View {
     let todo: Todo
     let now: Date
-    let hidesToday: Bool
+    let list: TodoList
     @Environment(TodoStore.self) private var store
     @State private var title: String
     @State private var isPickingDate = false
+    @State private var isHovering = false
     @FocusState private var isEditing: Bool
 
-    init(todo: Todo, now: Date, hidesToday: Bool) {
+    init(todo: Todo, now: Date, list: TodoList) {
         self.todo = todo
         self.now = now
-        self.hidesToday = hidesToday
+        self.list = list
         _title = State(initialValue: todo.title)
     }
 
@@ -36,7 +37,7 @@ struct TodoRow: View {
                 .onChange(of: isEditing) { if !isEditing { commitTitle() } }
                 .onChange(of: todo.title) { title = todo.title }
 
-            if todo.isUrgent {
+            if todo.isUrgent && list != .urgent {
                 Image(systemName: "flag.fill").foregroundStyle(.orange)
             }
 
@@ -46,6 +47,7 @@ struct TodoRow: View {
                     .popover(isPresented: $isPickingDate) { datePicker }
             }
         }
+        .onHover { isHovering = $0 }
         .contextMenu {
             if !todo.isCompleted {
                 Button(todo.isUrgent ? "Remove Urgent" : "Mark Urgent") { store.update(todo.id) { $0.isUrgent.toggle() } }
@@ -60,13 +62,14 @@ struct TodoRow: View {
 
     @ViewBuilder private var dateLabel: some View {
         let calendar = Calendar.current
-        if let date = todo.date, !(hidesToday && calendar.isDate(date, inSameDayAs: now)) {
+        // Upcoming shows dates as section headers, Today implies today
+        if let date = todo.date, list != .upcoming, !(list == .today && calendar.isDate(date, inSameDayAs: now)) {
             let isOverdue = date < calendar.startOfDay(for: now)
             Text(dayText(date, calendar: calendar))
                 .font(.callout)
                 .foregroundStyle(isOverdue ? .red : .secondary)
         } else {
-            Image(systemName: "calendar").foregroundStyle(.tertiary)
+            Image(systemName: "calendar").foregroundStyle(.tertiary).opacity(isHovering || isPickingDate ? 1 : 0)
         }
     }
 
