@@ -39,17 +39,20 @@ struct TodoRow: View {
                 Image(systemName: "flag.fill").foregroundStyle(.orange)
             }
 
-            Button { isPickingDate = true } label: { dateLabel }
-                .buttonStyle(.plain)
-                .disabled(todo.isCompleted)
-                .popover(isPresented: $isPickingDate) { datePicker }
+            if !todo.isCompleted {
+                Button { isPickingDate = true } label: { dateLabel }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $isPickingDate) { datePicker }
+            }
         }
         .contextMenu {
-            Button(todo.isUrgent ? "Remove Urgent" : "Mark Urgent") { store.update(todo.id) { $0.isUrgent.toggle() } }
-            Button("Schedule for Today") { schedule(daysFromNow: 0) }
-            Button("Schedule for Tomorrow") { schedule(daysFromNow: 1) }
-            Button("Remove Date") { schedule(daysFromNow: nil) }.disabled(todo.date == nil)
-            Divider()
+            if !todo.isCompleted {
+                Button(todo.isUrgent ? "Remove Urgent" : "Mark Urgent") { store.update(todo.id) { $0.isUrgent.toggle() } }
+                Button("Schedule for Today") { schedule(daysFromNow: 0) }
+                Button("Schedule for Tomorrow") { schedule(daysFromNow: 1) }
+                Button("Remove Date") { schedule(daysFromNow: nil) }.disabled(todo.date == nil)
+                Divider()
+            }
             Button("Delete", role: .destructive) { withAnimation { store.delete(todo.id) } }
         }
     }
@@ -57,7 +60,7 @@ struct TodoRow: View {
     @ViewBuilder private var dateLabel: some View {
         let calendar = Calendar.current
         if let date = todo.date, !(hidesToday && calendar.isDate(date, inSameDayAs: now)) {
-            let isOverdue = date < calendar.startOfDay(for: now) && !todo.isCompleted
+            let isOverdue = date < calendar.startOfDay(for: now)
             Text(dayText(date, calendar: calendar))
                 .font(.callout)
                 .foregroundStyle(isOverdue ? .red : .secondary)
