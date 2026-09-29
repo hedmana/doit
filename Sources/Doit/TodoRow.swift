@@ -34,6 +34,7 @@ struct TodoRow: View {
                 .disabled(todo.isCompleted)
                 .onSubmit(commitTitle)
                 .onChange(of: isEditing) { if !isEditing { commitTitle() } }
+                .onChange(of: todo.title) { title = todo.title }
 
             if todo.isUrgent {
                 Image(systemName: "flag.fill").foregroundStyle(.orange)
