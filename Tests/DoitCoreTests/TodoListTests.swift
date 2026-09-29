@@ -3,7 +3,11 @@ import Testing
 @testable import DoitCore
 
 struct TodoListTests {
-    let calendar = Calendar(identifier: .gregorian)
+    let calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        return calendar
+    }()
     let now = Date(timeIntervalSince1970: 1_790_000_000)
 
     func day(_ offset: Int) -> Date { calendar.date(byAdding: .day, value: offset, to: now)! }
@@ -48,5 +52,17 @@ struct TodoListTests {
         for list in TodoList.allCases where list != .logbook {
             #expect(titles(list, [list.newTodo(titled: "new", now: now, calendar: calendar)]) == ["new"])
         }
+    }
+
+    @Test func logbookGroupsByCompletionDayNewestFirst() {
+        let completions = [day(-1), now, day(-1).addingTimeInterval(60), now.addingTimeInterval(-60)]
+        let todos = completions.enumerated().map { index, date in
+            var todo = Todo(title: "\(index)")
+            todo.completedAt = date
+            return todo
+        }
+        let days = TodoList.logbookDays(from: todos, calendar: calendar)
+        #expect(days.map(\.day) == [calendar.startOfDay(for: now), calendar.startOfDay(for: day(-1))])
+        #expect(days.map { $0.todos.map(\.title) } == [["1", "3"], ["2", "0"]])
     }
 }

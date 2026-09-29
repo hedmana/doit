@@ -17,6 +17,12 @@ public enum TodoList: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    public static func logbookDays(from all: [Todo], calendar: Calendar = .current) -> [(day: Date, todos: [Todo])] {
+        Dictionary(grouping: logbook.todos(from: all, calendar: calendar)) { calendar.startOfDay(for: $0.completedAt!) }
+            .map { (day: $0.key, todos: $0.value) }
+            .sorted { $0.day > $1.day }
+    }
+
     public func newTodo(titled title: String, now: Date = .now, calendar: Calendar = .current) -> Todo {
         let today = calendar.startOfDay(for: now)
         switch self {

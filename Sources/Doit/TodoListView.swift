@@ -10,7 +10,11 @@ struct TodoListView: View {
 
     var body: some View {
         List {
-            if list != .logbook {
+            if list == .logbook {
+                ForEach(TodoList.logbookDays(from: store.todos), id: \.day) { group in
+                    Section(dayTitle(group.day)) { rows(group.todos) }
+                }
+            } else {
                 HStack {
                     Image(systemName: "plus").foregroundStyle(.secondary)
                     TextField("New To-Do", text: $newTitle)
@@ -18,9 +22,7 @@ struct TodoListView: View {
                         .focused($isAdding)
                         .onSubmit(add)
                 }
-            }
-            ForEach(list.todos(from: store.todos, now: now)) { todo in
-                TodoRow(todo: todo, now: now, hidesToday: list == .today)
+                rows(list.todos(from: store.todos, now: now))
             }
         }
         .navigationTitle(list.title)
@@ -29,6 +31,17 @@ struct TodoListView: View {
                 .keyboardShortcut("n")
                 .disabled(list == .logbook)
         }
+    }
+
+    private func rows(_ todos: [Todo]) -> some View {
+        ForEach(todos) { TodoRow(todo: $0, now: now, hidesToday: list == .today) }
+    }
+
+    private func dayTitle(_ day: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) { return "Today" }
+        if calendar.isDateInYesterday(day) { return "Yesterday" }
+        return day.formatted(date: .complete, time: .omitted)
     }
 
     private func add() {
