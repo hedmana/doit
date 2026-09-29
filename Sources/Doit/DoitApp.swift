@@ -3,7 +3,7 @@ import SwiftUI
 
 @main
 struct DoitApp: App {
-    @State private var store = TodoStore()
+    @State private var store = TodoStore(fileURL: UserDefaults.standard.url(forKey: "storeURL") ?? TodoStore.defaultURL)
 
     var body: some Scene {
         Window("Doit", id: "main") {
