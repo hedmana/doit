@@ -29,6 +29,7 @@ struct TodoRow: View {
                     .foregroundStyle(todo.isCompleted ? Color.accentColor : .secondary)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(todo.isCompleted ? "Reopen" : "Complete")
 
             TextField("Title", text: $title)
                 .textFieldStyle(.plain)
@@ -39,12 +40,14 @@ struct TodoRow: View {
                 .onChange(of: todo.title) { title = todo.title }
 
             if todo.isUrgent && list != .urgent {
-                Image(systemName: "flag.fill").foregroundStyle(.orange)
+                Image(systemName: "flag.fill").foregroundStyle(.orange).accessibilityLabel("Urgent")
             }
 
             if !todo.isCompleted {
                 Button { isPickingDate = true } label: { dateLabel }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Schedule")
+                    .accessibilityValue(todo.date.map { dayText($0, calendar: .current) } ?? "")
                     .popover(isPresented: $isPickingDate) { datePicker }
             }
         }
