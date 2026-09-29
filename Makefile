@@ -1,4 +1,5 @@
 APP := build/Doit.app
+ICON := .build/AppIcon.icns
 # The default swift-build system fails without Xcode; native works with Command Line Tools
 SWIFT_FLAGS := --build-system native
 
@@ -15,13 +16,19 @@ endif
 
 .PHONY: app run test install clean
 
-app:
+app: $(ICON)
 	swift build $(SWIFT_FLAGS) -c release
 	rm -rf $(APP)
-	mkdir -p $(APP)/Contents/MacOS
+	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
 	cp .build/release/Doit $(APP)/Contents/MacOS/
 	cp Resources/Info.plist $(APP)/Contents/
+	cp $(ICON) $(APP)/Contents/Resources/
 	codesign --force --sign - $(APP)
+
+$(ICON): Resources/AppIcon.swift
+	rm -rf .build/AppIcon.iconset
+	swift Resources/AppIcon.swift .build/AppIcon.iconset
+	iconutil -c icns -o $@ .build/AppIcon.iconset
 
 run: app
 	open $(APP)
