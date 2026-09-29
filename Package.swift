@@ -5,6 +5,8 @@ let package = Package(
     name: "Doit",
     platforms: [.macOS(.v14)],
     targets: [
-        .executableTarget(name: "Doit"),
+        .target(name: "DoitCore"),
+        .executableTarget(name: "Doit", dependencies: ["DoitCore"]),
+        .testTarget(name: "DoitCoreTests", dependencies: ["DoitCore"]),
     ]
 )
